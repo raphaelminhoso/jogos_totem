@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CYBER RUN — Teste isolado (Totem CRT)</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a12;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: "Press Start 2P", monospace, monospace;
+}
+canvas {
+  border: 2px solid #f0f;
+  display: block;
+  image-rendering: pixelated;
+  background: #050510;
+  box-shadow: 0 0 24px rgba(255, 0, 200, 0.25);
+}
+#info {
+  color: #c9b4ff;
+  font-size: 9px;
+  margin-top: 12px;
+  text-align: center;
+  line-height: 1.8;
+  max-width: 640px;
+}
+#info strong { color: #0ff; }
+#state { color: #ff0; font-size: 10px; margin-top: 8px; }
+#file-proto-warn {
+  background: #300;
+  color: #faa;
+  border: 2px solid #f44;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  max-width: 640px;
+  font-size: 9px;
+  line-height: 1.7;
+  text-align: left;
+}
+#file-proto-warn code { color: #fff; }
+</style>
+<script>
+if (location.protocol === 'file:') {
+  document.addEventListener('DOMContentLoaded', function () {
+    var w = document.createElement('div');
+    w.id = 'file-proto-warn';
+    w.innerHTML = '<strong>Não funciona por file://</strong> — o browser bloqueia módulos ES (<code>import</code>) em ficheiros locais. ' +
+      'Na raiz do projeto corre <code>npm run dev</code> ou <code>npm run dev:py</code> e abre <code>http://localhost:3000/test_cyberrun.html</code>.';
+    document.body.insertBefore(w, document.body.firstChild);
+  });
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+<canvas id="c" width="640" height="480"></canvas>
+<div id="info">
+  <strong>Teste só CYBER RUN</strong> — não carrega orquestrador nem as outras TVs.<br>
+  Edita <code>src/games/cyberrun.js</code> e recarrega. Integração final continua em <code>app/index.html</code>.<br>
+  <strong>← →</strong> mover · <strong>↑</strong> ou <strong>Espaço</strong> saltar / duplo salto · <strong>Enter</strong> reinicia a corrida<br>
+  Blueprint do mapa: <a href="cyberrun_blueprint.html" style="color:#7dd3fc">cyberrun_blueprint.html</a> · consola: <code>cyberrunExportLevelBlueprint()</code>
+</div>
+<div id="state"></div>
+
+<script type="module">
+import cyberrun from './src/games/cyberrun.js';
+import { poll, getState } from './src/input.js';
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const stateEl = document.getElementById('state');
+
+cyberrun.init(canvas, getState());
+cyberrun.reset();
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Enter') {
+    e.preventDefault();
+    cyberrun.reset();
+    last = performance.now();
+  }
+});
+
+let last = performance.now();
+
+function loop(now) {
+  poll();
+  const dt = Math.min(now - last, 50);
+  last = now;
+
+  cyberrun.update(dt);
+  cyberrun.render(ctx);
+
+  stateEl.textContent = 'getState(): ' + cyberrun.getState() + '  |  Enter = reiniciar nível';
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
