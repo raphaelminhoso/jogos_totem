@@ -20,7 +20,7 @@ canvas { border: 2px solid #f0f; display: block; image-rendering: pixelated; }
 </div>
 <canvas id="c" width="640" height="480"></canvas>
 <div id="info">
-  ← → mover &nbsp;|&nbsp; ↑ / Space pular &nbsp;|&nbsp; Z atacar &nbsp;|&nbsp; ↓ + Z ONDA GLITCH &nbsp;|&nbsp; X SUPER (barra cheia) &nbsp;|&nbsp; → → DASH &nbsp;|&nbsp; ← ← + Z PODER &nbsp;|&nbsp; ← → + Z BURST &nbsp;|&nbsp; Enter reiniciar
+  ← → mover | ↑ / Space pular | Z atacar | Joystick arcade: manche = mover, botões = ações
 </div>
 <div id="state">state: idle</div>
 
@@ -34,36 +34,21 @@ canvas { border: 2px solid #f0f; display: block; image-rendering: pixelated; }
 </script>
 <script type="module">
 import luta from './src/games/luta.js';
+import { poll, getState, getGamepadInfo } from './src/input.js';
 
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const stateEl = document.getElementById('state');
 
-const inp = { left: false, right: false, up: false, down: false, buttonA: false, buttonB: false, buttonX: false, start: false };
+luta.init(canvas, getState());
+luta.reset();
 
 document.addEventListener('keydown', e => {
-  if (e.code === 'ArrowLeft')  inp.left = true;
-  if (e.code === 'ArrowRight') inp.right = true;
-  if (e.code === 'ArrowUp')    { inp.up = true; inp.buttonA = true; }
-  if (e.code === 'Space')      { inp.up = true; inp.buttonA = true; e.preventDefault(); }
-  if (e.code === 'ArrowDown')  { inp.down = true; }
-  if (e.code === 'KeyZ')       { inp.buttonB = true; }
-  if (e.code === 'KeyX')      { inp.buttonX = true; }
-  if (e.code === 'Enter')      { luta.reset(); }
-  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code)) e.preventDefault();
+  if (e.code === 'Enter') {
+    e.preventDefault();
+    luta.reset();
+  }
 });
-
-document.addEventListener('keyup', e => {
-  if (e.code === 'ArrowLeft')  inp.left = false;
-  if (e.code === 'ArrowRight') inp.right = false;
-  if (e.code === 'ArrowUp')    { inp.up = false; inp.buttonA = false; }
-  if (e.code === 'Space')      { inp.up = false; inp.buttonA = false; }
-  if (e.code === 'ArrowDown')  { inp.down = false; }
-  if (e.code === 'KeyZ')       { inp.buttonB = false; }
-  if (e.code === 'KeyX')      { inp.buttonX = false; }
-});
-
-luta.init(canvas, inp);
 
 let lastTime = 0;
 const FRAME_TIME = 1000 / 60;
@@ -73,9 +58,12 @@ function loop(now) {
   if (now - lastTime < FRAME_TIME) return;
   lastTime = now - ((now - lastTime) % FRAME_TIME);
 
+  poll();
   luta.update(16.67);
   luta.render(ctx);
-  stateEl.textContent = 'state: ' + luta.getState() + '  |  Enter = restart';
+  const gp = getGamepadInfo();
+  const gpTxt = gp.ready ? ' | gamepad OK' : ' | aperte um botão do joystick';
+  stateEl.textContent = 'state: ' + luta.getState() + '  |  Enter = restart' + gpTxt;
 }
 requestAnimationFrame(loop);
 </script>
